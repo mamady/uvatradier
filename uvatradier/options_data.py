@@ -19,6 +19,21 @@ class OptionsData (Tradier):
 		self. OPTIONS_EXPIRY_ENDPOINT 	= "v1/markets/options/expirations"; 						# GET
 		self. OPTIONS_SYMBOL_ENDPOINT 	= "v1/markets/options/lookup"; 								# GET
 
+	#
+	# Fetch all option chain data across all available expiries
+	#
+
+	def get_chain_all (self, symbol):
+		expiry_dates = self.get_expiry_dates(symbol)
+
+		df = pd.DataFrame()
+
+		for expiry in expiry_dates:
+			df = pd.concat([df, self.get_chain_day(symbol=symbol, expiry=expiry)])
+
+		return df
+
+
 
 	#
 	# Fetch all option chain data for a single day of contract expirations
