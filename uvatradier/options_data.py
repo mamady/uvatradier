@@ -68,17 +68,28 @@ class OptionsData (Tradier):
 			'greeks'	: _bool_to_flag(greeks) if greeks is not None else 'false'
 		};
 
-		r = requests.get(
-			url 	= f"{self.BASE_URL}/{self.OPTIONS_CHAIN_ENDPOINT}",
-			params 	= request_params,
-			headers = self.REQUESTS_HEADERS
-		);
+		try:
+			r = requests.get(
+				url 	= f"{self.BASE_URL}/{self.OPTIONS_CHAIN_ENDPOINT}",
+				params 	= request_params,
+				headers = self.REQUESTS_HEADERS
+			);
+			r.raise_for_status();
+		except requests.exceptions.RequestException as exc:
+			raise RuntimeError(f"Failed to retrieve option chain for {symbol} ({expiry}): {exc}");
 
 		#
 		# Convert returned json -> pandas dataframe
 		#
 
-		option_df = pd.DataFrame(r.json()['options']['option']);
+		response_json = r.json() or {};
+		options_payload = response_json.get('options');
+		option_rows = options_payload.get('option') if isinstance(options_payload, dict) else None;
+
+		if not option_rows:
+			raise ValueError(f"No option chain data returned for symbol '{symbol}' and expiration '{expiry}'.");
+
+		option_df = pd.DataFrame(option_rows);
 
 
 		#
